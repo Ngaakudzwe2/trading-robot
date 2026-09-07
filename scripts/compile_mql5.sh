@@ -17,13 +17,23 @@
 #      comment for exactly what's needed.
 #   4. Run this script to compile.
 #
-# THIS ENVIRONMENT: verified at the time this script was written -- `wine` is
-# NOT installed here and no MetaEditor binary exists anywhere on this machine
-# (checked via `find`). That means this script cannot be exercised end-to-end
-# in this development environment; it is provided ready to run on a macOS
-# machine that has completed steps 1-3 above. Running it here will fail fast
-# with a clear, actionable error (see check_dependencies below) rather than
-# silently pretending to succeed.
+# THIS ENVIRONMENT (corrected 2026-09-07): an earlier version of this comment
+# claimed no Wine and no MetaEditor existed on this machine. That was WRONG --
+# it was based on a `find` that only searched ~/.wine and /, and never looked
+# where MetaTrader's official macOS build actually installs:
+#   /Applications/MetaTrader 5.app          (bundles its own wine64)
+#   ~/Library/Application Support/net.metaquotes.wine.metatrader5/   (prefix)
+# Both are present, and this script now finds and uses them automatically.
+#
+# What IS still missing here is the mql-zmq library itself: the terminal's
+# MQL5/Include/Zmq/, MQL5/Include/Mql/ and MQL5/Libraries/ are all empty, so
+# AmaroZmqBridge.mq5 cannot compile until step 3 below is done. Run
+# scripts/verify_mt5_install.py against the data folder to confirm.
+#
+# Note also that driving MetaEditor headlessly through the bundled Wine did
+# not reliably emit a compile log in testing -- MetaEditor started (its GUI
+# stack initialises) but produced no artifact. Compiling from the MetaEditor
+# GUI with F7 is the dependable path on this setup.
 #
 # Usage:
 #   scripts/compile_mql5.sh [path/to/Source.mq5]
@@ -43,6 +53,7 @@ SRC_MQ5="$REPO_ROOT/mt5_bridge_ea/AmaroZmqBridge.mq5"
 METAEDITOR_PATH=""
 DATA_DIR=""
 WINE_PREFIX="${WINEPREFIX:-$HOME/.wine}"
+WINE_BIN=""
 LOG_DIR="$REPO_ROOT/logs"
 
 # ---------------------------------------------------------------- arg parsing
@@ -67,7 +78,14 @@ mkdir -p "$LOG_DIR"
 check_dependencies() {
   local ok=1
 
-  if ! command -v wine >/dev/null 2>&1 && ! command -v wine64 >/dev/null 2>&1; then
+  # MT5.app bundles its own wine64; prefer it, since a Mac with the official MT5
+  # build has no system-wide wine on PATH.
+  local bundled="/Applications/MetaTrader 5.app/Contents/SharedSupport/wine/bin/wine64"
+  if [ -x "$bundled" ]; then
+    WINE_BIN="$bundled"
+    WINE_PREFIX="${WINEPREFIX:-$HOME/Library/Application Support/net.metaquotes.wine.metatrader5}"
+    echo "Using MT5.app's bundled wine64 and prefix: $WINE_PREFIX"
+  elif ! command -v wine >/dev/null 2>&1 && ! command -v wine64 >/dev/null 2>&1; then
     echo "ERROR: Wine is not installed or not on PATH." >&2
     echo "  Install it with:  brew install --cask wine-stable" >&2
     echo "  (or wine-crossover / wine-devel, any Wine build works for MetaEditor)" >&2
@@ -76,6 +94,11 @@ check_dependencies() {
 
   if [[ -z "$METAEDITOR_PATH" ]]; then
     local candidates=(
+      # MetaTrader's OFFICIAL macOS build ships its own bundled Wine and lives here --
+      # verified present on this machine 2026-09-07. Checked FIRST because the earlier
+      # version of this script only searched ~/.wine and therefore reported "no
+      # MetaEditor found" on a machine that had one installed all along.
+      "$HOME/Library/Application Support/net.metaquotes.wine.metatrader5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe"
       "$WINE_PREFIX/drive_c/Program Files/MetaTrader 5/metaeditor64.exe"
       "$WINE_PREFIX/drive_c/Program Files (x86)/MetaTrader 5/metaeditor64.exe"
     )
@@ -111,7 +134,8 @@ run_compile() {
   rm -f "$log_file"
 
   local wine_bin
-  wine_bin="$(command -v wine || command -v wine64)"
+  wine_bin="${WINE_BIN:-$(command -v wine || command -v wine64)}"
+  export WINEPREFIX="$WINE_PREFIX" WINEDEBUG=-all
 
   local cmd=("$wine_bin" "$METAEDITOR_PATH" "/compile:$SRC_MQ5" "/log:$log_file")
   if [[ -n "$DATA_DIR" ]]; then
