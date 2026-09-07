@@ -30,7 +30,7 @@ Design (one setup, not a committee, per the retraining brief):
                   something to carry forward into a higher-frequency,
                   short-permitting version.
 
-Daily -> H1 alignment reuses medfreq_strategy.align_htf_to_m5's exact
+Daily -> H1 alignment reuses htf_align.align_htf_to_m5's exact
 no-lookahead logic (a daily SMA value is only visible to an H1 bar once
 that daily bar has actually closed) rather than reimplementing it --
 that logic is already correct and tested, and re-deriving it here would
@@ -39,7 +39,7 @@ just be a second place to introduce a lookahead bug.
 Parameter budget: exactly 5 tunable parameters (trend_sma_period,
 pullback_ema_period, pullback_tolerance_pct, atr_sl_mult, atr_tp_mult).
 atr_period is fixed at 14 (the standard default used everywhere else in
-this project, e.g. medfreq_strategy.py) and is NOT tuned -- deliberately
+this project) and is NOT tuned -- deliberately
 kept out of the search to hold the budget at 5, not 6.
 """
 
@@ -55,7 +55,7 @@ from typing import List, Optional
 from src.candle import Candle
 from src.indicators import ema, atr, adx
 from src.backtest_structures import sma
-from src.medfreq_strategy import align_htf_to_m5
+from src.htf_align import align_htf_to_m5
 from src.regime_filter import atr_expansion_gate
 
 # Original, non-optimized finding from the regime breakdown (trending vs. ranging performed
@@ -93,7 +93,7 @@ class LowfreqV2Config:
     # allowed -- targets the specific failure mode diagnosed in the last round (the noisy
     # edge of a chop/expansion transition firing the gate on a single bar that reverts
     # immediately after). Fixed at 3, not searched -- reuses the exact convention already
-    # independently justified for medfreq_strategy.py's confirm_bars anti-whipsaw filter,
+    # independently justified for the retired MEDFREQ strategy's confirm_bars filter,
     # not a new number invented for this round. 1 (the default) means "no persistence
     # requirement," i.e. identical to the prior round's behavior.
     regime_confirm_bars: int = 1
