@@ -183,3 +183,56 @@ signal and it still underperforms buy-and-hold over the backtested
 period. Demo/paper trading here is meant to build genuine forward-test
 evidence on data the strategy has never seen, not to skip the step of
 first proving there's an edge worth trading.
+
+---
+
+## Verified macOS install (2026-09-07)
+
+The official MetaTrader 5 macOS build ships its **own bundled Wine**, so none of
+the `brew install wine` steps above are needed on this machine. Real, verified
+paths on this Mac:
+
+| Thing | Path |
+|---|---|
+| App (bundles wine64) | `/Applications/MetaTrader 5.app` |
+| Bundled wine | `/Applications/MetaTrader 5.app/Contents/SharedSupport/wine/bin/wine64` |
+| Wine prefix | `~/Library/Application Support/net.metaquotes.wine.metatrader5` |
+| **Data folder** | `<prefix>/drive_c/Program Files/MetaTrader 5` |
+| MetaEditor | `<data folder>/MetaEditor64.exe` |
+
+Note this is the **install-directory layout**, not the usual Windows
+`AppData/Roaming/MetaQuotes/Terminal/<32-hex-id>` one — a `find` for the latter
+returns nothing here, which is what caused an earlier round of this project to
+wrongly conclude MetaEditor wasn't installed at all.
+
+### mql-zmq — installed and verified
+
+Downloaded from `https://github.com/dingmaotu/mql-zmq` (master) and placed:
+
+    <data folder>/MQL5/Include/Zmq/     <- 8 headers
+    <data folder>/MQL5/Include/Mql/     <- Lang/{Native,Mql,Error,GlobalVariable}.mqh
+    <data folder>/MQL5/Libraries/libzmq.dll      449,536 bytes, PE machine 0x8664 (x64)
+    <data folder>/MQL5/Libraries/libsodium.dll   401,408 bytes, PE machine 0x8664 (x64)
+
+`Include/Mql/` is **not optional**: `Zmq.mqh` line 23 is
+`#include <Mql/Lang/Native.mqh>`. Copying only `Include/Zmq/` produces a
+missing-file error that mentions neither ZeroMQ nor the file you copied.
+
+The `Library/MT5` (VC++ 2015) binaries were chosen over the `Library/VC2010`
+alternative after confirming this prefix already has the 2015 runtime
+(`vcruntime140.dll`, `msvcp140.dll` present in `drive_c/windows/system32`).
+If you ever hit a DLL-load failure, `Library/VC2010/x64` is the fallback.
+
+Confirm any time with:
+
+    python3 scripts/verify_mt5_install.py \
+      "$HOME/Library/Application Support/net.metaquotes.wine.metatrader5/drive_c/Program Files/MetaTrader 5"
+
+### Headless compilation does NOT work on this setup
+
+Driving `MetaEditor64.exe /compile:` through the bundled Wine was tried
+repeatedly: MetaEditor starts (its Vulkan/Metal GUI stack initialises) but
+produces no `.ex5` and no log, with several `/log` path variants. Use the
+MetaEditor **GUI + F7** instead. `scripts/compile_mql5.sh` still finds the
+right binaries automatically and is left in place for a machine where the
+headless path does work.
