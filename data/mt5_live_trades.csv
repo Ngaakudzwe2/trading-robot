@@ -1,0 +1,2 @@
+timestamp,symbol,mt5_symbol,action,price,lot,sl,tp,ticket,reason,outcome,pnl,slippage,comment
+2026-09-07T14:46:56.729779+00:00,XAUUSD,XAUUSD,SELL,1273.89500,0.45,1276.12360,1270.18066,555,"v4-session-ob sell zone[1274.71,1276.86] atr=1.49",OPEN,0.00,0.03000,mock filled

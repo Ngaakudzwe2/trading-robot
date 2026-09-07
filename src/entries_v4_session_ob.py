@@ -232,6 +232,86 @@ def simulate(h1_candles: List[Candle], h4_candles: List[Candle], config: Session
     return trades
 
 
+def latest_signal(h1_candles: List[Candle], h4_candles: List[Candle],
+                   config: SessionOBConfig, entry_price: Optional[float] = None) -> Optional[dict]:
+    """
+    Live counterpart to simulate(): returns the entry signal for the MOST RECENT
+    H1 bar, or None if that bar doesn't trigger one. Used by mt5_live.py so live
+    execution derives its entries from exactly the same order-block construction
+    the backtest uses -- _build_order_blocks() and the zone/trigger rules below are
+    shared, not reimplemented, so the two cannot silently drift apart.
+
+    Returns {"direction", "entry_price", "sl", "tp", "atr", "zone_low", "zone_high",
+    "bar_time"} -- SL/TP are the strategy's own ATR-derived levels, so a caller must
+    NOT substitute its own multipliers.
+
+    ONE DOCUMENTED DIVERGENCE from simulate(): simulate() will not open a trade
+    while one is already open, and therefore does not consume the zone that would
+    have triggered it. This function has no position model -- it consumes every
+    triggered zone during replay. The live caller is expected to check the broker's
+    real open positions before acting (mt5_live does). In practice this strategy
+    averages ~5-7 trades/year, so overlapping setups are rare, but the difference is
+    real and is the reason this is a separate function rather than a flag on
+    simulate(): keeping simulate() untouched preserves every published backtest
+    result byte-for-byte.
+
+    The caller must pass the FULL history it has, not just recent bars -- zone state
+    is built by replaying forward, so a truncated window yields different zones.
+    """
+    if len(h1_candles) < 2:
+        return None
+    order_blocks = _build_order_blocks(h4_candles, config)
+    atr_vals = atr(h1_candles, ATR_PERIOD)
+
+    active_zones: List[dict] = []
+    ob_pointer = 0
+    last_index = len(h1_candles) - 1
+
+    for i in range(1, len(h1_candles)):
+        c = h1_candles[i]
+        while ob_pointer < len(order_blocks) and order_blocks[ob_pointer].confirmed_time_ms <= c.open_time:
+            active_zones.append({"ob": order_blocks[ob_pointer], "expires_at_index": i + config.ob_zone_expiry_bars})
+            ob_pointer += 1
+        active_zones = [z for z in active_zones if z["expires_at_index"] >= i]
+
+        if atr_vals[i] is None or atr_vals[i] <= 0:
+            continue
+
+        triggered = None
+        for z in active_zones:
+            ob = z["ob"]
+            entered_zone = ob.zone_low <= c.low <= ob.zone_high or ob.zone_low <= c.high <= ob.zone_high or \
+                (c.low <= ob.zone_low and c.high >= ob.zone_high)
+            if not entered_zone:
+                continue
+            if ob.direction == Direction.LONG and c.close > ob.zone_high:
+                triggered = z
+                break
+            if ob.direction == Direction.SHORT and c.close < ob.zone_low:
+                triggered = z
+                break
+        if triggered is None:
+            continue
+        active_zones.remove(triggered)
+
+        if i != last_index:
+            continue  # a historical trigger -- only the final bar's signal is actionable
+
+        a = atr_vals[i]
+        direction = triggered["ob"].direction
+        # Anchor SL/TP to the caller's real fill when one is supplied (live execution
+        # should measure risk from the price actually paid, not from the signal bar's
+        # close); fall back to the close, which is what simulate() uses before it adds
+        # its own spread adjustment.
+        price = entry_price if entry_price is not None else c.close
+        sl = (price - config.atr_sl_mult * a) if direction == Direction.LONG else (price + config.atr_sl_mult * a)
+        tp = (price + config.atr_tp_mult * a) if direction == Direction.LONG else (price - config.atr_tp_mult * a)
+        return {"direction": direction, "entry_price": price, "sl": sl, "tp": tp, "atr": a,
+                "zone_low": triggered["ob"].zone_low, "zone_high": triggered["ob"].zone_high,
+                "bar_time": datetime.fromtimestamp(c.open_time / 1000, tz=timezone.utc)}
+    return None
+
+
 def run_walk_forward_folds(h1_all: List[Candle], h4_all: List[Candle], config: SessionOBConfig,
                             folds: List[dict], notional: float = 10_000.0,
                             lookback_days: int = 60) -> dict:
