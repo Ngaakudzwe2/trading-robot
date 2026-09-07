@@ -10,13 +10,32 @@
 //| compile/attach walkthrough, including the "Allow DLL imports"     |
 //| terminal setting this requires.                                   |
 //|                                                                    |
-//| REQUIRES the third-party "mql-zmq" library (MQL5 ZeroMQ binding). |
-//| Not vendored here -- find and install it yourself (search for     |
-//| "mql-zmq" / MQL5 ZeroMQ library; a well-known one is by            |
-//| dingmaotu), following ITS install instructions: its Zmq.mqh (and  |
-//| supporting includes) go in MQL5/Include/Zmq/, and libzmq.dll      |
-//| (+ libsodium.dll if required) go in MQL5/Libraries/, before this  |
-//| file will compile.                                                 |
+//| REQUIRES the third-party "mql-zmq" library (MQL5 ZeroMQ binding)  |
+//| by dingmaotu: https://github.com/dingmaotu/mql-zmq                |
+//| Not vendored here. Install, verified against that repo 2026-09-07:|
+//|                                                                    |
+//|  1. Copy the ENTIRE Include/ tree, not just Include/Zmq/:         |
+//|       Include/Zmq/*  -> <data folder>/MQL5/Include/Zmq/           |
+//|       Include/Mql/*  -> <data folder>/MQL5/Include/Mql/           |
+//|     The Mql/ subtree is NOT optional. Zmq.mqh's first line is     |
+//|     #include <Mql/Lang/Native.mqh>, so copying only Zmq/ fails to |
+//|     compile with a missing-file error that looks unrelated to     |
+//|     ZeroMQ. (mql-zmq bundles the small mql4-lib subset it needs,  |
+//|     so the full separate mql4-lib install is NOT required.)       |
+//|  2. DLLs -> <data folder>/MQL5/Libraries/                          |
+//|       BOTH libzmq.dll AND libsodium.dll (libsodium is required,   |
+//|       not optional). Take the 64-bit pair from Library/MT5/ for a |
+//|       normal 64-bit MT5. Under Wine, prefer the Library/VC2010/   |
+//|       build -- the default binaries need the VC++ 2015 runtime,   |
+//|       which is a common Wine failure point.                       |
+//|                                                                    |
+//| Find <data folder> via MT5: File -> Open Data Folder.             |
+//|                                                                    |
+//| The ZeroMQ calls below (Context/Socket ctors, bind/unbind,        |
+//| recv(msg,true), getData(), ZmqMsg(string), send(msg)) were each   |
+//| checked line-by-line against that library's actual published      |
+//| signatures on 2026-09-07 and all match -- if this fails to        |
+//| compile, suspect the install above, not this file's socket calls. |
 //|                                                                    |
 //| *** UNCOMPILED, UNTESTED *** -- there is no MetaEditor/MT5        |
 //| terminal available in this development environment. Everything    |
