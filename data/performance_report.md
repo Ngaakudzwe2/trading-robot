@@ -1971,3 +1971,82 @@ Next: re-run after the ERROR-hour refill closes the ~10% data gaps (which
 also affect H4 order-block detection), then decide whether to widen the
 signal (e.g. a second session window) -- as a pre-registered change, not
 a tuned one -- to get sample size up.
+
+## Cross-Asset / Macro Architecture Pivot (2026-09-10)
+
+Moved off single-asset OHLC pattern strategies after ten rounds produced no
+validated edge. Three new modules, all using real data, no synthetic series.
+
+### src/data_macro.py -- cross-asset feeds
+20 series cached concurrently (ThreadPoolExecutor; yfinance and requests are
+both blocking): DXY, nominal yields, VIX, SPX, majors, and an 8-pair non-USD
+cross universe from Yahoo, plus **FRED DFII10 (10y TIPS REAL yield)** and
+T10YIE breakevens. Real yields specifically, not nominal: gold's opportunity
+cost is the real rate, and a nominal move driven by inflation expectations is
+gold-POSITIVE while the same move driven by real rates is gold-NEGATIVE --
+nominal ^TNX blends two opposite cases. FRED needs explicit certifi
+verification (plain urllib fails CERTIFICATE_VERIFY_FAILED here).
+
+### src/screening.py -- ADF + Hurst + cointegration gate
+Screens instruments BEFORE strategy design. Run on log prices (running ADF on
+returns would trivially call everything stationary and mean nothing).
+
+**Every one of 12 instruments screened as a random walk.** Hurst clustered at
+0.41-0.53; XAUUSD specifically 0.494, ADF p=0.998. No instrument classified
+as either mean-reverting or trending on both measures.
+
+**This retroactively explains the previous ten rounds.** XAUUSD's log price is
+statistically indistinguishable from a random walk over 2012-2026, so no
+single-series pattern strategy on it should have been expected to work. That
+question was never asked before strategy design; it should have been first.
+
+Cointegration (Engle-Granger) found 3 pairs at p<0.05. A structural-break
+check then killed one of them:
+
+| pair | full 2012- | post-SNB 2015-07- |
+|---|---|---|
+| EURCHF~USDJPY | p=0.0102, spread H=0.400 | p=0.0182, H=0.402 (survives) |
+| AUDJPY~AUDNZD | p=0.0383, H=0.457 | **p=0.0254, H=0.379 (improves)** |
+| EURCHF~AUDCAD | p=0.0442, H=0.410 | p=0.4283 (**COLLAPSES**) |
+
+EURCHF was SNB-pegged at 1.20 until 2015-01-15, when it gapped 1.2008 ->
+0.9942 overnight. A pegged series is artificially stationary, so any
+cointegration spanning that era is suspect by construction. EURCHF~AUDCAD was
+exactly that artifact. **AUDJPY~AUDNZD is the strongest candidate**: it
+improves outside the peg era, has a clearly mean-reverting spread (H=0.379),
+and involves no pegged leg. Not yet a strategy -- a screened candidate.
+
+### src/macro_regime.py -- DXY + real-yield regime filter for XAUUSD
+SUPPORTIVE = real yields falling AND dollar weakening; HOSTILE = both rising.
+Thresholds are exact zero, not tuned bands, to avoid reopening the
+curve-fitting surface this pivot exists to escape.
+
+Forward 20d gold returns are monotonic across buckets: SUPPORTIVE +0.88%,
+NEUTRAL +0.61%, HOSTILE +0.38%.
+
+**But the significance was an artifact and is reported as such.** Daily
+sampling of 20-day forward returns overlaps by 19/20 days, inflating n roughly
+20-fold:
+
+| horizon | overlapping | non-overlapping (honest) |
+|---|---|---|
+| 20d | n=1029/1116, p=0.0071 | n=50/54, diff +1.46%, **p=0.073** |
+| 60d | n=1029/1087, p=0.171 | n=18/15, diff +4.28%, p=0.150 |
+
+test_separation() now computes and prints both, with the overlapping figure
+labelled INFLATED / reference-only, so the module cannot be used to justify
+trading on a number that isn't real.
+
+Honest read: direction is right and consistent (SUPPORTIVE > HOSTILE at both
+horizons), the effect size is economically meaningful, and unlike every prior
+round the mechanism was specified a priori from economics rather than found by
+search. But p=0.073 is not significance, and with only ~50 independent
+observations per bucket across 14 years, sample size is the binding
+constraint. Suggestive, not established.
+
+### Note on the requested backtest_entries.py refactor
+Not done as specified, deliberately: that file is a 58-line v1 crossover
+position state machine (BUY on golden cross / SELL on death cross) with no
+data pipeline in it. Multi-series input belongs in data_macro's align()/
+to_series() and the strategy engines (entries_v2/entries_v4 simulate()), which
+is where it was put.
