@@ -2050,3 +2050,78 @@ position state machine (BUY on golden cross / SELL on death cross) with no
 data pipeline in it. Multi-series input belongs in data_macro's align()/
 to_series() and the strategy engines (entries_v2/entries_v4 simulate()), which
 is where it was put.
+
+## Third-Party Harness Review -> Two Cost Findings That Affect Every Prior Result (2026-09-10)
+
+Reviewed `github.com/yamiekondowe3/trading-harness` (5 validation gates: OOS,
+random-entry placebo, cross-section, buy-and-hold, cost sensitivity). Security
+scan clean -- no subprocess/exec/network, one parquet write.
+
+It could not be run directly: `CostModel.for_symbol()` **refuses** to build a
+cost model unless the data carries a real per-bar `spread` column ("Refusing to
+guess a cost model"). Our Dukascopy cache has no spread column. That guardrail
+is correct, and chasing it produced two findings that matter more than the
+harness run would have.
+
+### Finding 1: the real XAUUSD spread is $0.65, not the $0.40 we assumed
+
+Measured from **204,214 actual Dukascopy ticks** across 11 sampled hours:
+
+| | USD |
+|---|---|
+| median | **0.6500** |
+| mean | 0.6246 |
+| p25 / p75 | 0.5600 / 0.6900 |
+| p95 | 0.8000 |
+
+The project has used $0.40 in every backtest since inception -- **62% of the
+real figure**. And the sample is biased optimistic: all 11 hours were London/NY
+session, when spreads are tightest; an all-hours median would be wider.
+
+`_parse_bi5()` has always extracted real bid and ask per tick. The information
+was there from the start; `_bucket_ticks_to_m5()` collapses each tick to
+`(ask+bid)/2` and throws the spread away. This was measurable at any point in
+the project and never was.
+
+### Finding 2: spread is structurally CANCELLED in the backtest -- worse than being wrong
+
+Varying spread alone in `entries_v4_session_ob.simulate()`, slippage fixed:
+
+| spread | net P&L | PF |
+|---|---|---|
+| $0.00 | +3.090% | 6.7481 |
+| $0.40 | +3.090% | 6.7471 |
+| $0.65 | +3.090% | 6.7464 |
+| $5.00 | -0.706% | 0.6429 |
+
+Zero spread and $0.65 spread give the **same P&L to three decimals**. The cause
+is structural: entry fill is `price + spread/2 + slip`, then SL and TP are
+anchored to that same inflated fill, so the entry-to-exit DISTANCE is
+unchanged. Exit charges only slippage, never the other half-spread. In reality
+you buy at the ask and sell at the bid, so a round-trip spread should cost
+roughly `spread x qty` per trade. It currently costs ~nothing; the only
+residual is via `qty = notional/fill`, which is why PF moves in the 4th
+decimal and why an absurd $5 finally bites.
+
+Slippage, by contrast, does bite correctly ($0.00 -> $0.50/side takes PF from
+6.89 to 1.66).
+
+**Consequence: every backtest P&L figure in this document is optimistic by
+approximately one round-trip spread per trade.** For gold at ~$1,400 on $10,000
+notional, qty ~7.1oz, so $0.65 spread is ~$4.6/trade; over the 32-trade
+Hypothesis 2 result that is ~1.5% of notional against a reported +5.71% --
+roughly a quarter of the profit. It does not by itself overturn any conclusion
+(the results were already not significant), but it means the true numbers are
+worse than reported, never better.
+
+Not yet fixed in code: correcting it changes every historical result, so it
+should be a deliberate, separately-verified change rather than folded in here.
+
+### Harness status
+Cloned and reviewed, not yet run. To run it needs XAUUSD bars carrying a real
+per-bar spread column, which means re-fetching ticks with spread retained
+(`_bucket_ticks_to_m5` would need to record median spread per bar). Its
+`el_scotto_a2` reference strategy is essentially this project's v2
+(trend-regime pullback + ATR-expansion gate + confirm_bars), and its README
+notes its own author ran "sixteen rounds with eight promising results -- all
+failed validation gates."
