@@ -1,0 +1,189 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Executive Memo - AMARO Trading System</title>
+<style>
+@page { size: A4; margin: 14mm; }
+body { font: 9.3pt/1.42 -apple-system,"Helvetica Neue",Arial,sans-serif; color:#111; max-width:188mm; margin:0 auto; }
+h1 { font-size:16pt; margin:0 0 2mm; letter-spacing:-.2px; }
+h2 { font-size:10.4pt; margin:4.2mm 0 1.4mm; padding-bottom:.8mm; border-bottom:1px solid #d6d6d6; }
+p { margin:0 0 1.8mm; }
+table { border-collapse:collapse; width:100%; margin:1.4mm 0 2.4mm; font-size:8.8pt; }
+th,td { border:1px solid #ddd; padding:1.1mm 2mm; text-align:left; }
+th { background:#f4f4f4; font-weight:600; }
+td:nth-child(n+2), th:nth-child(n+2) { text-align:right; }
+table:first-of-type td:nth-child(2) { font-weight:600; }
+hr { border:0; border-top:1px solid #ccc; margin:3mm 0; }
+strong { font-weight:650; }
+ul { margin:1mm 0 2mm; padding-left:5mm; }
+li { margin-bottom:.9mm; }
+em { color:#555; font-size:8.3pt; }
+blockquote { margin:0; }
+</style></head><body><h1>Executive Memo — AMARO Trading System</h1>
+<p><strong>To:</strong> Client · <strong>Date:</strong> 18 October 2026 · <strong>Re:</strong> Status of $20,000 USD allocation</p>
+<hr />
+<h2>Bottom line</h2>
+<p><strong>Your $20,000 is held in full. $0 has been placed in any market.</strong> Four trading
+strategies were built and tested to completion; none produced a statistically
+significant edge. A screen of the entire investable universe then confirmed there
+is no validated candidate to deploy. The capital is held because the evidence
+says the system does not yet work — not because testing is incomplete.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capital deployed</td>
+<td><strong>$0</strong></td>
+</tr>
+<tr>
+<td>Capital held</td>
+<td><strong>$20,000 USD</strong></td>
+</tr>
+<tr>
+<td>Strategies tested to completion</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Strategies clearing the evidence bar</td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>Capital-readiness gates met</td>
+<td><strong>0 of 6</strong></td>
+</tr>
+</tbody>
+</table>
+<h2>What the testing showed</h2>
+<p>Live paper trading (real prices, simulated fills) currently stands at a <strong>profit
+factor of 0.374</strong> across 21 trades — the system returned 37 cents for every dollar
+lost, with a <strong>net −8.96%</strong>. Historical testing explains why: the core entry
+signal, tested across 1,850 trades, produced a profit factor of 0.989, which is a
+coin flip before costs. No strategy reached statistical significance; the best
+p-value was 0.117 against a required 0.05.</p>
+<h2>The six gates that protected the capital</h2>
+<p>Each gate is objective and measured on forward-test data only — trades placed
+after a strategy is locked, never on historical simulation.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gate</th>
+<th>Threshold</th>
+<th>Current</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Continuous data</td>
+<td>30 days unbroken</td>
+<td>Restored 18 Oct</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Honest cost accounting</td>
+<td>Measured spread, charged both sides</td>
+<td>Pending</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Sample size</td>
+<td>100+ closed forward trades</td>
+<td>21</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Profit factor</td>
+<td>Above 1.5</td>
+<td>0.374</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Statistical significance</td>
+<td><strong>p below 0.05</strong></td>
+<td>Not yet testable</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Demo execution</td>
+<td>Verified order round-trip</td>
+<td>Not started</td>
+</tr>
+</tbody>
+</table>
+<p>Gates 4 and 5 must be satisfied <strong>together</strong>. A strong profit factor across a
+handful of trades can arise from luck; the significance test asks whether a result
+that good could have occurred by chance. Requiring both is what stopped an earlier
+candidate — which looked convincing — from reaching live capital.</p>
+<h2>The 435-pair universe screen</h2>
+<p>Before concluding, 31 instruments were screened across FX, equity indices,
+commodities and crypto, covering 2018–2026 — 435 instrument pairs in total.</p>
+<p><strong>The statistical correction is the finding.</strong> Testing 435 pairs at the
+conventional 5% threshold produces roughly 22 false positives by arithmetic alone.
+Applying Benjamini-Hochberg (false discovery rate) and Bonferroni corrections:</p>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raw "significant" results at p &lt; 0.05</td>
+<td>37</td>
+</tr>
+<tr>
+<td>Expected from chance alone</td>
+<td>21.8</td>
+</tr>
+<tr>
+<td>Survive strict correction</td>
+<td>2</td>
+</tr>
+<tr>
+<td><strong>Tradeable candidates</strong></td>
+<td><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Both survivors pair market volatility (VIX) against gold and silver. They are
+genuinely related over the long run, but the <em>spread</em> between them moves randomly
+— so there is no reliable point at which it returns, and therefore nothing to
+trade. Every other instrument measured as statistically indistinguishable from
+random price movement.</p>
+<p>This also corrected an earlier error in our own work: a smaller screen found three
+"significant" pairs where chance predicts 3.3, and one was advanced for
+development before failing outright. That is precisely the mistake this corrected
+screen is designed to prevent.</p>
+<h2>Next steps: a change of inputs, not of settings</h2>
+<p>Further adjustment of retail technical patterns has been stopped. Repeatedly
+tuning the same indicators against the same price history produces results that
+look strong and do not survive contact with new data — a pattern we observed
+directly and repeatedly.</p>
+<p>Research has moved to genuine quantitative inputs:</p>
+<ul>
+<li><strong>Macro drivers</strong> — the US dollar index and inflation-adjusted Treasury yields,
+  being gold's established fundamental drivers, rather than chart shapes.</li>
+<li><strong>Statistical pre-screening</strong> — instruments are now tested for exploitable
+  structure <em>before</em> any strategy is designed for them, with multiple-comparison
+  correction applied as standard.</li>
+<li><strong>Honest cost accounting</strong> — transaction costs measured against 204,214 real
+  market ticks, replacing an assumed figure that understated them.</li>
+</ul>
+<p>One genuine result carried forward: the macro filter does not create profit, but
+it reduced maximum drawdown from 33% to 12.4%. It is a demonstrable risk control.</p>
+<h2>Commitment</h2>
+<p><strong>Live capital remains held in full until a strategy satisfies all six gates,
+including statistical significance at p &lt; 0.05 on forward-test data.</strong> No
+deployment date is set, because committing to one would create pressure to pass
+gates on schedule rather than on evidence.</p>
+<p>Our present assessment is that the system as it stands is unlikely to meet these
+gates. We would rather tell you that now than discover it with your capital at
+risk.</p>
+<hr />
+<p><em>Full detail: <code>CAPITAL_PROTECTION_REPORT.md</code>. Technical record:
+<code>data/performance_report.md</code>. Screen output: <code>data/universe_screen.json</code>.</em></p></body></html>
