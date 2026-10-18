@@ -1,0 +1,188 @@
+{
+  "MEASURED SPREAD (0.89 pts, from real ticks)": {
+    "csv": "/private/tmp/claude-501/-Users-admin-Desktop---admin-s-MacBook-Pro-AMARO/772c29ac-de74-4635-980f-4a0c138d8318/scratchpad/NASDAQ/data/NAS100_M5.csv",
+    "spread_points": 0.89,
+    "folds": 4,
+    "bars": 3921,
+    "span": [
+      "2026-09-07 20:00:00-04:00",
+      "2026-09-28 19:55:00-04:00"
+    ],
+    "pooled": {
+      "n": 10,
+      "win_rate_pct": 60.0,
+      "profit_factor": 10.881320185956428,
+      "net_pnl_pct": 15.697475890437959,
+      "max_drawdown_pct": 1.0286400003006693,
+      "sharpe": 1.7108467133035612
+    },
+    "median_fold_sharpe": 0.0,
+    "fold_sharpes": [
+      0.0,
+      -0.069,
+      2.03,
+      0.0
+    ],
+    "long": {
+      "n": 5,
+      "win_rate_pct": 60.0,
+      "profit_factor": 19.883086411362207,
+      "net_pnl_pct": 10.750888934787934,
+      "max_drawdown_pct": 0.5180516129275747,
+      "sharpe": 1.273911777191611
+    },
+    "short": {
+      "n": 5,
+      "win_rate_pct": 60.0,
+      "profit_factor": 5.853108927390238,
+      "net_pnl_pct": 4.946586955650024,
+      "max_drawdown_pct": 1.0103968752758634,
+      "sharpe": 1.5969022397781514
+    },
+    "significance": {
+      "n": 10,
+      "mean_pct": 1.5697475890437957,
+      "t": 1.6230517024357043,
+      "p_ttest": 0.13902664331015802,
+      "p_bootstrap": 0.0684,
+      "ci_low": 1.4930461006471707,
+      "ci_high": 35.93595769536632
+    },
+    "monte_carlo": {
+      "net_p5": 3.0235213406496753,
+      "net_p50": 14.706053695448258,
+      "net_p95": 32.62659984588201,
+      "dd_p50": 0.8783549239684838,
+      "dd_p95": 1.8182158422368,
+      "prob_loss_pct": 0.88
+    },
+    "buy_and_hold": {
+      "net_pnl_pct": 2.5058729282366077,
+      "max_drawdown_pct": 3.1115103073362476
+    }
+  },
+  "REPO ASSUMPTION (1.5 pts)": {
+    "csv": "/private/tmp/claude-501/-Users-admin-Desktop---admin-s-MacBook-Pro-AMARO/772c29ac-de74-4635-980f-4a0c138d8318/scratchpad/NASDAQ/data/NAS100_M5.csv",
+    "spread_points": 1.5,
+    "folds": 4,
+    "bars": 3921,
+    "span": [
+      "2026-09-07 20:00:00-04:00",
+      "2026-09-28 19:55:00-04:00"
+    ],
+    "pooled": {
+      "n": 10,
+      "win_rate_pct": 60.0,
+      "profit_factor": 10.700114802020307,
+      "net_pnl_pct": 15.622127277517569,
+      "max_drawdown_pct": 1.0356414161525824,
+      "sharpe": 1.7035611348944655
+    },
+    "median_fold_sharpe": 0.0,
+    "fold_sharpes": [
+      0.0,
+      -0.086,
+      2.026,
+      0.0
+    ],
+    "long": {
+      "n": 5,
+      "win_rate_pct": 60.0,
+      "profit_factor": 19.484060781556845,
+      "net_pnl_pct": 10.712125776736679,
+      "max_drawdown_pct": 0.5208973417382367,
+      "sharpe": 1.2699348699607675
+    },
+    "short": {
+      "n": 5,
+      "win_rate_pct": 60.0,
+      "profit_factor": 5.76247717454237,
+      "net_pnl_pct": 4.910001500780893,
+      "max_drawdown_pct": 1.022085561934557,
+      "sharpe": 1.5867389750705068
+    },
+    "significance": {
+      "n": 10,
+      "mean_pct": 1.5622127277517572,
+      "t": 1.6161399958823575,
+      "p_ttest": 0.1405197531779069,
+      "p_bootstrap": 0.0701,
+      "ci_low": 1.4261527345099263,
+      "ci_high": 35.85701709995564
+    },
+    "monte_carlo": {
+      "net_p5": 2.958149286470287,
+      "net_p50": 14.630074284672677,
+      "net_p95": 32.54237963156938,
+      "dd_p50": 0.8893146021191046,
+      "dd_p95": 1.8412850948399042,
+      "prob_loss_pct": 0.8999999999999999
+    },
+    "buy_and_hold": {
+      "net_pnl_pct": 2.5058729282366077,
+      "max_drawdown_pct": 3.1115103073362476
+    }
+  },
+  "STRESS (2x measured, 1.78 pts)": {
+    "csv": "/private/tmp/claude-501/-Users-admin-Desktop---admin-s-MacBook-Pro-AMARO/772c29ac-de74-4635-980f-4a0c138d8318/scratchpad/NASDAQ/data/NAS100_M5.csv",
+    "spread_points": 1.78,
+    "folds": 4,
+    "bars": 3921,
+    "span": [
+      "2026-09-07 20:00:00-04:00",
+      "2026-09-28 19:55:00-04:00"
+    ],
+    "pooled": {
+      "n": 10,
+      "win_rate_pct": 60.0,
+      "profit_factor": 10.618585864796884,
+      "net_pnl_pct": 15.587544206327774,
+      "max_drawdown_pct": 1.0388553861819314,
+      "sharpe": 1.700214415550837
+    },
+    "median_fold_sharpe": 0.0,
+    "fold_sharpes": [
+      0.0,
+      -0.094,
+      2.024,
+      0.0
+    ],
+    "long": {
+      "n": 5,
+      "win_rate_pct": 60.0,
+      "profit_factor": 19.305570389756998,
+      "net_pnl_pct": 10.694333826899513,
+      "max_drawdown_pct": 0.5222034349222122,
+      "sharpe": 1.2681081356840973
+    },
+    "short": {
+      "n": 5,
+      "win_rate_pct": 60.0,
+      "profit_factor": 5.721566943762785,
+      "net_pnl_pct": 4.893210379428262,
+      "max_drawdown_pct": 1.027450790683006,
+      "sharpe": 1.5820666603809892
+    },
+    "significance": {
+      "n": 10,
+      "mean_pct": 1.5587544206327775,
+      "t": 1.6129650191377947,
+      "p_ttest": 0.14121046267851917,
+      "p_bootstrap": 0.0709,
+      "ci_low": 1.3954497995968862,
+      "ci_high": 35.8192601384526
+    },
+    "monte_carlo": {
+      "net_p5": 2.923611783863631,
+      "net_p50": 14.597113511362727,
+      "net_p95": 32.5037235082952,
+      "dd_p50": 0.8944309180550447,
+      "dd_p95": 1.8525428880517891,
+      "prob_loss_pct": 0.9199999999999999
+    },
+    "buy_and_hold": {
+      "net_pnl_pct": 2.5058729282366077,
+      "max_drawdown_pct": 3.1115103073362476
+    }
+  }
+}
