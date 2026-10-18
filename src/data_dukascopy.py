@@ -63,7 +63,16 @@ DUKASCOPY_URL = "https://datafeed.dukascopy.com/datafeed/{symbol}/{year:04d}/{mo
 # standard 5-decimal-pip convention for FX majors -- ALSO empirically verified here (not assumed):
 # fetch_and_cache_range()'s first real EURUSD/GBPUSD batch was sanity-checked against known real
 # price levels for those pairs before being trusted (see data/asset_shift_data_check.md if present).
-POINT_VALUE = {"XAUUSD": 1000.0, "EURUSD": 100000.0, "GBPUSD": 100000.0}
+POINT_VALUE = {"XAUUSD": 1000.0, "EURUSD": 100000.0, "GBPUSD": 100000.0,
+               # Index CFDs, added 2026-10-18 for the NAS100 opening-momentum work.
+               # Point value verified by decoding real ticks rather than assumed:
+               # USATECH raw ask 29172002 / 1000 = 29172.00, and the sibling indices
+               # decode to 7613.6 (S&P 500) and 52011.8 (Dow) on the same divisor --
+               # all three plausible 2026 levels, which is the cross-check that
+               # confirms 1000 is right.
+               "USATECHIDXUSD": 1000.0,   # Nasdaq 100 / NAS100
+               "USA500IDXUSD": 1000.0,    # S&P 500
+               "USA30IDXUSD": 1000.0}     # Dow 30
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 M5_HEADER = ["bar_start_utc", "open", "high", "low", "close", "tick_count"]
