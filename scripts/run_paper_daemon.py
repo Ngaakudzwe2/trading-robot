@@ -62,6 +62,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))  # so `python3 scripts/run_paper_daemon.py` finds the src package
 
 from src.data_deriv import fetch_deriv_candles_async, sample_current_spread_resilient, DerivApiError
+from src.data_macro import fetch_live_candles
 from src.entries_v2 import LowfreqV2Config, simulate, compute_metrics, DEFAULT_COSTS
 
 LOG_DIR = REPO_ROOT / "logs"
@@ -70,6 +71,14 @@ STATE_PATH = REPO_ROOT / "data" / "paper_state.json"
 
 H1_WINDOW = 500     # ~3 weeks of H1 bars -- same window entries_v2_paper.py already uses successfully
 DAILY_WINDOW = 100
+
+# Price source. Switched to Yahoo on 2026-10-18: Deriv's WebSocket endpoint has
+# returned HTTP 520 for EVERY app_id since 2026-10-02 -- confirmed by a direct
+# probe outside this codebase, so it is their outage, not ours. The daemon stayed
+# alive throughout (its error handler caught each failure) but logged zero
+# successful polls for 16 days, which is the same as not running. Deriv is kept
+# selectable rather than deleted so this can be switched back if it recovers.
+PRICE_SOURCE = "yahoo"
 
 # The originally, most rigorously validated candidate (full 7.5yr walk-forward + a significant
 # holdout) -- deliberately NOT block_adx_transition=True by default: this round's own IS/OOS
@@ -140,8 +149,14 @@ def _running_metrics(trades: list, notional: float) -> dict:
 
 
 async def poll_once(symbol: str, notional: float, config: LowfreqV2Config, state: dict) -> None:
-    h1 = await fetch_deriv_candles_async(symbol=symbol, interval="1h", limit=H1_WINDOW)
-    daily = await fetch_deriv_candles_async(symbol=symbol, interval="1d", limit=DAILY_WINDOW)
+    if PRICE_SOURCE == "yahoo":
+        # yfinance is blocking, so it runs in a worker thread rather than stalling
+        # the event loop (and with it the signal handlers) for the whole fetch.
+        h1 = await asyncio.to_thread(fetch_live_candles, "XAUUSD", "1h", H1_WINDOW)
+        daily = await asyncio.to_thread(fetch_live_candles, "XAUUSD", "1d", DAILY_WINDOW)
+    else:
+        h1 = await fetch_deriv_candles_async(symbol=symbol, interval="1h", limit=H1_WINDOW)
+        daily = await fetch_deriv_candles_async(symbol=symbol, interval="1d", limit=DAILY_WINDOW)
     all_trades = simulate(h1, daily, config, notional, DEFAULT_COSTS)
 
     last_seen_ms = state.get("last_seen_open_time_ms")
@@ -158,7 +173,9 @@ async def poll_once(symbol: str, notional: float, config: LowfreqV2Config, state
     # Resilient sampler already retries transient failures and tries a dynamic-symbol
     # fallback internally, returning None (never raising) once that's exhausted -- so this
     # stays purely best-effort with no try/except needed here.
-    quote = await sample_current_spread_resilient(symbol, max_attempts=2)
+    quote = None
+    if PRICE_SOURCE == "deriv":
+        quote = await sample_current_spread_resilient(symbol, max_attempts=2)
 
     for t in sorted(new_trades, key=lambda t: t.exit_time):
         state["trades"].append({
@@ -196,8 +213,9 @@ async def run(symbol: str, notional: float, config: LowfreqV2Config, poll_second
 
     log.info(f"Starting paper daemon: symbol={symbol} notional={notional} poll_seconds={poll_seconds}")
     log.info(f"Config: {config.as_dict()}")
-    log.info(f"Cost model: spread=${DEFAULT_COSTS.spread:.2f}, slippage=${DEFAULT_COSTS.slippage_per_side:.2f}/side "
-             f"(mandatory, per task spec)")
+    log.info(f"Cost model: spread=${DEFAULT_COSTS.spread:.2f}, slippage=${DEFAULT_COSTS.slippage_per_side:.2f}/side")
+    log.info(f"Price source: {PRICE_SOURCE}"
+             + ("  (Yahoo GC=F; Deriv is down -- HTTP 520 since 2026-10-02)" if PRICE_SOURCE == "yahoo" else ""))
 
     attempt = 0
     iteration = 0

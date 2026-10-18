@@ -231,3 +231,62 @@ if __name__ == "__main__":
     got = fetch_many(args.names, start=args.start, interval=args.interval,
                       force_refresh=args.force_refresh)
     print(f"\n{len(got)}/{len(args.names)} series cached in {CACHE_DIR}")
+
+
+# ---------------------------------------------------------------- live feed
+# Added 2026-10-18: the paper daemon's price source moved off Deriv, whose
+# WebSocket endpoint has returned HTTP 520 for every app_id since 2026-10-02
+# (verified by direct probe outside this codebase, so it is Deriv's outage and
+# not ours). Yahoo serves GC=F at 1h for a trailing ~60 days, which covers the
+# daemon's 500-bar H1 window.
+LIVE_LOOKBACK = {"1h": "60d", "1d": "400d"}
+
+
+def fetch_live_candles(name: str = "XAUUSD", interval: str = "1h",
+                        limit: int = 500, drop_forming: bool = True) -> List[Candle]:
+    """
+    Fresh Yahoo candles for live polling -- deliberately NOT cached, unlike
+    fetch_yahoo(): a daemon reading a cache file would re-simulate the same
+    stale bars forever and never see a new one.
+
+    drop_forming removes the most recent bar when its period has not closed yet.
+    This matters for signal correctness, not tidiness: the strategies take their
+    entry decision from the LAST bar, so an in-progress bar can fire a signal
+    that disappears once the bar finishes forming -- the live equivalent of
+    lookahead. Yahoo returns the forming bar without marking it, so the check is
+    done here against the interval's own boundary.
+    """
+    import warnings
+    import yfinance as yf
+
+    period = LIVE_LOOKBACK.get(interval, "60d")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        df = yf.download(MACRO_TICKERS[name], period=period, interval=interval,
+                          progress=False, auto_adjust=False)
+    if df is None or df.empty:
+        raise RuntimeError(f"Yahoo returned no {interval} data for {name} ({MACRO_TICKERS[name]})")
+    if hasattr(df.columns, "nlevels") and df.columns.nlevels > 1:
+        df.columns = df.columns.get_level_values(0)
+
+    interval_ms = {"1h": 3_600_000, "1d": 86_400_000}.get(interval, 3_600_000)
+    now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+    out: List[Candle] = []
+    for ts, r in df.iterrows():
+        # Hourly rows come back tz-aware (US/Eastern); daily rows naive. Normalise
+        # both to UTC epoch ms -- treating a naive stamp as local time here would
+        # shift every daily bar by the machine's offset.
+        stamp = ts.tz_localize(timezone.utc) if ts.tzinfo is None else ts.tz_convert(timezone.utc)
+        open_ms = int(stamp.timestamp() * 1000)
+        try:
+            candle = Candle(open_time=open_ms, open=float(r["Open"]), high=float(r["High"]),
+                             low=float(r["Low"]), close=float(r["Close"]), volume=0.0)
+        except (ValueError, TypeError, KeyError):
+            continue  # NaN row (holiday/halt) -- skipped, never zero-filled
+        if drop_forming and open_ms + interval_ms > now_ms:
+            continue
+        out.append(candle)
+
+    out.sort(key=lambda c: c.open_time)
+    return out[-limit:]
