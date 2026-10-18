@@ -184,65 +184,89 @@ Full technical detail in `data/performance_report.md`; screen output in
 
 A fifth strategy was tested: a NAS100 5-minute opening-momentum system, chosen
 because index opening ranges have a more credible rationale than gold chart
-patterns and because it was independently specified, with its own costs and
+patterns, and because it was independently specified with its own cost model and
 validation protocol. It was run through the full validation battery against real
-Dukascopy tick data. **It fails all four gates.**
+Dukascopy tick data. **It fails three of four gates, and loses decisively to
+simply holding the index.**
 
-### Result: 341 trades, 2019-01 to 2020-07
+### Result: 436 trades, January 2019 to December 2020
 
 | Gate | Threshold | Result | Status |
 |---|---|---|---|
-| Profit factor | above 1.5 | **1.275** | FAIL |
-| Statistical significance | p below 0.05 | **0.151** | FAIL |
-| Median fold Sharpe | above 0 | **-0.000** | FAIL |
-| Beats buy-and-hold | yes | **+31.9% vs +68.2%** | FAIL |
+| Profit factor | above 1.5 | **1.164** | FAIL |
+| Statistical significance | p below 0.05 | **0.296** | FAIL |
+| Median fold Sharpe | above 0 | **+0.215** | pass |
+| Beats buy-and-hold | yes | **+24.1% vs +102.8%** | FAIL |
 
 Across 30 contiguous walk-forward folds with parameters fixed throughout, using
-the measured 0.89-point tick spread.
+the measured 0.89-point tick spread. The one gate it passes shows per-fold
+returns are mildly positive; it does not offset a profit factor of 1.16, a
+p-value of 0.30, or a benchmark that beat it more than four to one.
 
 ### The decisive finding: it is an expensive way to be long
 
 | | Trades | Win rate | Profit factor | Net P&L |
 |---|---|---|---|---|
-| **Long** | 182 | 31.9% | 1.578 | **+35.07%** |
-| **Short** | 159 | 25.8% | 0.943 | **-3.14%** |
+| **Long** | 226 | 32.3% | 1.500 | **+36.84%** |
+| **Short** | 210 | 25.2% | 0.827 | **−12.73%** |
 
-Every dollar of profit came from long trades during a period when the index itself
-rose 68.22%. The short side lost money. The strategy returned **+31.93% against
-the index's +68.22%** — less than half of simply holding it, while taking
-individual trade risk and paying spread on 341 round trips.
+All profit came from long trades while the index itself rose 102.80%. The short
+side lost money outright. The system returned **+24.11% against the index's
++102.80%** — under a quarter of simply holding it, while paying spread on 436
+round trips and carrying per-trade risk.
 
 This is precisely the bull-market bias the strategy's own written analysis warned
-about, now measured rather than assumed. A client holding NAS100 directly over the
-same period would have doubled this system's return with no execution risk.
+about, now measured rather than assumed. A client holding NAS100 directly over
+this period would have more than quadrupled this system's return, with no
+execution risk and no transaction costs.
+
+### Tested twice: the larger sample made it worse
+
+The strategy was evaluated at two sample sizes as data accumulated. Every
+headline metric moved against it:
+
+| | 19 months (341 trades) | 24 months (436 trades) |
+|---|---|---|
+| Profit factor | 1.275 | **1.164** |
+| Net P&L | +31.93% | **+24.11%** |
+| p-value | 0.151 | **0.296** |
+| Short side net | −3.14% | **−12.73%** |
+| Buy-and-hold | +68.22% | **+102.80%** |
+| Shortfall vs. index | 2.1x | **4.3x** |
+
+A genuine edge tends to firm up as the sample grows. This one weakened on every
+measure. The deterioration was also predicted in advance — the added period was a
+strong rally, which was expected to deepen the long bias and widen the benchmark
+gap, and did both.
 
 ### Costs consume what little edge exists
 
-| Spread | Profit factor | Net P&L | p-value |
-|---|---|---|---|
-| 0.89 pts (measured) | 1.275 | +31.93% | 0.151 |
-| 1.50 pts (its own assumption) | 1.157 | +19.21% | 0.382 |
-| 1.78 pts (2x stress) | 1.112 | +14.01% | 0.523 |
+| Spread | Profit factor | Net P&L | p-value | Monte Carlo P(loss) |
+|---|---|---|---|---|
+| 0.89 pts (measured from real ticks) | 1.164 | +24.11% | 0.296 | 14.7% |
+| 1.50 pts (its own assumption) | 1.067 | +10.30% | 0.656 | 33.9% |
+| 1.78 pts (2x stress) | 1.029 | +4.56% | 0.843 | 44.0% |
 
-A doubling of spread removes more than half the return and pushes significance
-from 0.15 to 0.52. An edge this cost-sensitive is not robust to a wider spread,
-a slower fill, or a less favourable broker.
+At double the measured spread the strategy is effectively flat, with a 44% chance
+of ending at a loss. An edge this fragile will not survive a wider spread, a
+slower fill, or a less favourable broker.
 
-Monte Carlo resampling put the 95th-percentile drawdown at 23.2% against a
-realised 8.94%, with a 6.6% chance of ending at a loss at measured costs, rising
-to 26.7% under the stress case.
+Monte Carlo resampling put the 95th-percentile drawdown at 29.7% against a
+realised 8.98% — the realised path was considerably luckier than the distribution
+of paths it was drawn from.
 
-### Scope and what would not change
+### Scope
 
-This covers 19 contiguous months (101,478 five-minute bars, 476 trading days).
-The full 2019-2026 fetch was interrupted by provider rate limiting at 20.5%
-completion. The tested window deliberately includes the February-March 2020 COVID
-crash, so it is not a pure bull-market sample.
+This covers 24 contiguous months (131,403 five-minute bars, 618 trading days) and
+deliberately includes the February–March 2020 COVID crash, so it is not a pure
+bull-market sample. The full 2019–2026 fetch reached 26% before provider rate
+limiting; it continues in the background, and a final confirmatory run will follow
+on completion.
 
 Extending the period is unlikely to reverse the finding. The failure is structural
 rather than statistical: profit comes only from the long side in a rising market,
-and 2020-2026 rose further still, which would widen the gap to buy-and-hold rather
-than close it.
+and 2021–2026 rose further still, which widens the shortfall against buy-and-hold
+rather than closing it.
 
 ### Decision
 

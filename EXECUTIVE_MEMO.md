@@ -6,7 +6,7 @@
 
 ## Bottom line
 
-**Your $20,000 is held in full. $0 has been placed in any market.** Four trading
+**Your $20,000 is held in full. $0 has been placed in any market.** Five trading
 strategies were built and tested to completion; none produced a statistically
 significant edge. A screen of the entire investable universe then confirmed there
 is no validated candidate to deploy. The capital is held because the evidence
@@ -16,11 +16,17 @@ says the system does not yet work — not because testing is incomplete.
 |---|---|
 | Capital deployed | **$0** |
 | Capital held | **$20,000 USD** |
-| Strategies tested to completion | 4 |
+| Strategies tested to completion | 5 |
 | Strategies clearing the evidence bar | **0** |
 | Capital-readiness gates met | **0 of 6** |
 
 ## What the testing showed
+
+The most recent test, a NAS100 index momentum strategy, returned **+24.1% across
+436 trades while the index itself rose +102.8%** — under a quarter of simply
+holding it, after paying costs on 436 round trips. Tested at two sample sizes as
+data accumulated, every metric moved against it. Detail in the addendum to the
+full report.
 
 Live paper trading (real prices, simulated fills) currently stands at a **profit
 factor of 0.374** across 21 trades — the system returned 37 cents for every dollar
