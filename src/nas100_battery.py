@@ -64,6 +64,24 @@ GATE_PF = 1.5
 GATE_P = 0.05
 
 
+def _patch_long_only(engine_mod) -> None:
+    """Clamps short signals to flat, making the strategy long-only.
+
+    Done by wrapping the repo's own _signal rather than filtering trades afterwards,
+    because the two are NOT equivalent. The engine holds one position at a time, so
+    in the two-sided version an open SHORT blocks any long signal that fires while it
+    runs. Removing shorts frees those slots, and a genuine long-only run therefore
+    takes MORE long trades than the long subset of a two-sided run -- reading the
+    long rows off the combined result would understate it.
+    """
+    original = engine_mod._signal
+
+    def long_only(o, c, e, rule: str) -> int:
+        return 1 if original(o, c, e, rule) == 1 else 0
+
+    engine_mod._signal = long_only
+
+
 def _import_engine(repo: Path):
     src = repo / "src"
     if not src.exists():
@@ -165,8 +183,12 @@ def buy_and_hold(df: pd.DataFrame) -> dict:
 
 
 def run_battery(csv_path: str, n_folds: int, spread_points: float, repo: Path,
-                 tz: str = "UTC") -> dict:
+                 tz: str = "UTC", long_only: bool = False) -> dict:
     load_csv, run_backtest, StrategyConfig, RiskConfig = _import_engine(repo)
+    if long_only:
+        import nasdaq_bt.engine as _eng
+        _patch_long_only(_eng)
+        run_backtest = _eng.run_backtest
 
     df = load_csv(csv_path, tz)
     strat = StrategyConfig()            # repo defaults: symmetric, ATR stop, chandelier trail
@@ -242,6 +264,9 @@ def _print(res: dict) -> None:
               f"{mc['net_p50']:+.1f}% / {mc['net_p95']:+.1f}%  |  "
               f"DD p95={mc['dd_p95']:.1f}%  P(loss)={mc['prob_loss_pct']:.1f}%")
     print(f"  {'BUY & HOLD':<22} net={bh['net_pnl_pct']:+.2f}%  maxDD={bh['max_drawdown_pct']:.2f}%")
+    if p["max_drawdown_pct"] > 0 and bh["max_drawdown_pct"] > 0:
+        print(f"  {'RETURN / MAX DD':<22} strategy {p['net_pnl_pct'] / p['max_drawdown_pct']:.2f}x  "
+              f"vs  buy&hold {bh['net_pnl_pct'] / bh['max_drawdown_pct']:.2f}x")
 
     g = gate_check(res)
     print(f"\n  GATES: PF>1.5 {'PASS' if g['pf_above_1_5'] else 'FAIL'} | "
@@ -258,11 +283,15 @@ def main() -> None:
     ap.add_argument("--repo", default=str(NASDAQ_REPO))
     ap.add_argument("--tz", default="UTC")
     ap.add_argument("--json-out", default="data/nas100_battery.json")
+    ap.add_argument("--long-only", action="store_true",
+                     help="Clamp short signals to flat (see _patch_long_only).")
     args = ap.parse_args()
 
     print("=" * 96)
     print("NAS100 5-MIN OPENING MOMENTUM -- VALIDATION BATTERY")
     print("  Strategy engine: the NASDAQ repo's own run_backtest (rules unchanged, no tuning)")
+    if "--long-only" in sys.argv:
+        print("  MODE: LONG-ONLY (short signals clamped to flat)")
     print("=" * 96)
 
     results = {}
@@ -270,7 +299,8 @@ def main() -> None:
                            ("REPO ASSUMPTION (1.5 pts)", REPO_ASSUMED_SPREAD),
                            ("STRESS (2x measured, 1.78 pts)", MEASURED_SPREAD_POINTS * 2)):
         print(f"\n--- {label} ---")
-        res = run_battery(args.csv, args.folds, spread, Path(args.repo), args.tz)
+        res = run_battery(args.csv, args.folds, spread, Path(args.repo), args.tz,
+                           long_only=args.long_only)
         _print(res)
         results[label] = res
 
