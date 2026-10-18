@@ -63,6 +63,7 @@ MACRO_TICKERS: Dict[str, str] = {
     "US30Y": "^TYX",
     "VIX": "^VIX",
     "SPX": "^GSPC",
+    "SPX500": "^GSPC",   # alias used by SCREEN_UNIVERSE
     # Instruments
     "XAUUSD": "GC=F",
     "EURUSD": "EURUSD=X",
@@ -77,6 +78,23 @@ MACRO_TICKERS: Dict[str, str] = {
     "EURCHF": "EURCHF=X",
     "CADJPY": "CADJPY=X",
     "AUDJPY": "AUDJPY=X",
+    # Wide-universe additions (2026-10-18), all verified to return >1,500 daily bars
+    # for 2018-2026 before being added.
+    "AUDUSD": "AUDUSD=X",
+    "USDCAD": "USDCAD=X",
+    "USDCHF": "USDCHF=X",
+    "NZDUSD": "NZDUSD=X",
+    "US30": "^DJI",
+    "NAS100": "^IXIC",
+    "DAX": "^GDAXI",
+    "FTSE100": "^FTSE",
+    "NIKKEI": "^N225",
+    "XAGUSD": "SI=F",
+    "WTI": "CL=F",
+    "NATGAS": "NG=F",
+    "COPPER": "HG=F",
+    "BTCUSD": "BTC-USD",
+    "ETHUSD": "ETH-USD",
 }
 
 # FRED series: name -> series id. Daily, no API key required.
@@ -86,6 +104,19 @@ FRED_SERIES: Dict[str, str] = {
 }
 
 CROSS_PAIR_UNIVERSE = ["EURJPY", "AUDCAD", "GBPJPY", "EURGBP", "AUDNZD", "EURCHF", "CADJPY", "AUDJPY"]
+
+# The full screening universe: FX majors and crosses, equity indices, commodities,
+# crypto, plus macro context series. 31 instruments = 465 pair combinations, which
+# is precisely why the screen that uses this applies FDR/Bonferroni correction --
+# at an uncorrected alpha=0.05, 465 tests yield ~23 false positives by construction.
+SCREEN_UNIVERSE = [
+    "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD",
+    "EURJPY", "GBPJPY", "EURGBP", "AUDJPY", "AUDNZD", "AUDCAD", "EURCHF", "CADJPY",
+    "US30", "SPX500", "NAS100", "DAX", "FTSE100", "NIKKEI",
+    "XAUUSD", "XAGUSD", "WTI", "NATGAS", "COPPER",
+    "BTCUSD", "ETHUSD",
+    "DXY", "US10Y", "VIX",
+]
 
 
 def _cache_path(name: str) -> str:
