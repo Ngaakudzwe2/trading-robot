@@ -2125,3 +2125,65 @@ per-bar spread column, which means re-fetching ticks with spread retained
 (trend-regime pullback + ATR-expansion gate + confirm_bars), and its README
 notes its own author ran "sixteen rounds with eight promising results -- all
 failed validation gates."
+
+## Hypothesis 3: Macro-Filtered Gold (2026-10-18)
+
+Pivot off single-asset OHLC patterns after Hypothesis 2 was retired at PF 0.374
+over 21 forward trades. Paper daemon stopped (PID 6194 unloaded) before this ran.
+
+### Data constraint, and what was built instead
+The brief asked for H1 DXY/US10Y across 2018-2026. **Yahoo refuses intraday
+history beyond 730 days** -- it says so explicitly ("The requested range must be
+within the last 730 days"), so H1 macro starts 2024-05-26. ^TNX hourly is also
+thin (4,189 bars/730d vs gold's 13,745). Built instead: gold H1 from this
+project's own Dukascopy cache + DAILY macro aligned onto each H1 bar by the
+existing no-lookahead pointer-advance -- the same architecture entries_v2 uses
+for its daily trend filter. 86,222 H1 bars, 99.3% macro coverage.
+
+The "24-hour" rolling window became 24 DAILY bars: a 24-hour window on a daily
+series holds one observation, which no correlation can be computed from.
+
+Rolling 24-day correlation matrix (latest), signs exactly as macro theory predicts:
+
+| | GOLD | DXY | US10Y |
+|---|---|---|---|
+| GOLD | 1.000 | -0.648 | -0.340 |
+| DXY | -0.648 | 1.000 | 0.444 |
+| US10Y | -0.340 | 0.444 | 1.000 |
+
+**Unit bug caught here, worth recording.** `^TNX` is quoted in PERCENT already
+(4.81 = 4.81%), not x10. An initial `/10` reported a 0.48% ten-year yield beside
+a 2.43% real yield -- an impossibility (it implies -1.95% breakeven inflation)
+and the tell that found it. Scaling by a positive constant would NOT have flipped
+any momentum sign, so the strategy rule would have looked fine while every
+reported level was wrong by 10x.
+
+### Result: 30-fold walk-forward, 2019-01 to 2026-07, honest costs
+
+Costs are the measured $0.65 spread charged on BOTH sides (entry at ask, exit at
+bid) plus $0.05/side slippage -- not the $0.40 half-spread-at-entry model that
+cancelled itself out in every earlier result in this document.
+
+| Arm | Trades | Win rate | PF | Net P&L | Max DD | Median fold Sharpe | p |
+|---|---|---|---|---|---|---|---|
+| Macro only (nominal) | 825 | 46.3% | 1.010 | +2.74% | 24.90% | -1.486 | 0.897 |
+| v2 pullback + macro filter | 493 | 48.5% | 1.079 | +11.16% | 12.38% | 0.000 | 0.432 |
+| Macro only (real yield) | 918 | 47.2% | 1.025 | +7.82% | 18.39% | -0.671 | 0.749 |
+
+**No arm shows an edge. Profit factor sits at 1.0-1.08, i.e. breakeven.**
+
+Unlike every previous round, this result is DECISIVE rather than inconclusive.
+825-918 trades is a large enough sample that "not significant" means the effect
+is genuinely absent, not merely unmeasured -- the earlier 21-32 trade results
+could not distinguish those two cases.
+
+Two secondary observations:
+- The macro filter does improve the pullback trigger's risk profile: max drawdown
+  falls from 33% (raw v2) to 12.4%, and net P&L flips from -6.02% to +11.16%. It
+  is a real risk filter. It is not an edge: p=0.432.
+- Macro-only's median fold Sharpe of -1.486 against a positive pooled P&L means
+  most folds lose and a few large winners carry the total -- the non-robust
+  pattern, and the reason median-of-folds is scored alongside the pooled figure.
+
+The real-yield substitution (economically the correct driver for gold) did not
+rescue it either, which rules out "wrong series" as the explanation.
