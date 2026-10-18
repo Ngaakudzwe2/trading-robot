@@ -177,3 +177,76 @@ evidence does not suggest they will be met by the system as it stands.
 Federal Reserve Economic Data), walk-forward validation, and live paper trading.
 Full technical detail in `data/performance_report.md`; screen output in
 `data/universe_screen.json`.*
+
+---
+
+## Addendum — NAS100 Opening Momentum: tested and NOT CLEARED (18 October 2026)
+
+A fifth strategy was tested: a NAS100 5-minute opening-momentum system, chosen
+because index opening ranges have a more credible rationale than gold chart
+patterns and because it was independently specified, with its own costs and
+validation protocol. It was run through the full validation battery against real
+Dukascopy tick data. **It fails all four gates.**
+
+### Result: 341 trades, 2019-01 to 2020-07
+
+| Gate | Threshold | Result | Status |
+|---|---|---|---|
+| Profit factor | above 1.5 | **1.275** | FAIL |
+| Statistical significance | p below 0.05 | **0.151** | FAIL |
+| Median fold Sharpe | above 0 | **-0.000** | FAIL |
+| Beats buy-and-hold | yes | **+31.9% vs +68.2%** | FAIL |
+
+Across 30 contiguous walk-forward folds with parameters fixed throughout, using
+the measured 0.89-point tick spread.
+
+### The decisive finding: it is an expensive way to be long
+
+| | Trades | Win rate | Profit factor | Net P&L |
+|---|---|---|---|---|
+| **Long** | 182 | 31.9% | 1.578 | **+35.07%** |
+| **Short** | 159 | 25.8% | 0.943 | **-3.14%** |
+
+Every dollar of profit came from long trades during a period when the index itself
+rose 68.22%. The short side lost money. The strategy returned **+31.93% against
+the index's +68.22%** — less than half of simply holding it, while taking
+individual trade risk and paying spread on 341 round trips.
+
+This is precisely the bull-market bias the strategy's own written analysis warned
+about, now measured rather than assumed. A client holding NAS100 directly over the
+same period would have doubled this system's return with no execution risk.
+
+### Costs consume what little edge exists
+
+| Spread | Profit factor | Net P&L | p-value |
+|---|---|---|---|
+| 0.89 pts (measured) | 1.275 | +31.93% | 0.151 |
+| 1.50 pts (its own assumption) | 1.157 | +19.21% | 0.382 |
+| 1.78 pts (2x stress) | 1.112 | +14.01% | 0.523 |
+
+A doubling of spread removes more than half the return and pushes significance
+from 0.15 to 0.52. An edge this cost-sensitive is not robust to a wider spread,
+a slower fill, or a less favourable broker.
+
+Monte Carlo resampling put the 95th-percentile drawdown at 23.2% against a
+realised 8.94%, with a 6.6% chance of ending at a loss at measured costs, rising
+to 26.7% under the stress case.
+
+### Scope and what would not change
+
+This covers 19 contiguous months (101,478 five-minute bars, 476 trading days).
+The full 2019-2026 fetch was interrupted by provider rate limiting at 20.5%
+completion. The tested window deliberately includes the February-March 2020 COVID
+crash, so it is not a pure bull-market sample.
+
+Extending the period is unlikely to reverse the finding. The failure is structural
+rather than statistical: profit comes only from the long side in a rising market,
+and 2020-2026 rose further still, which would widen the gap to buy-and-hold rather
+than close it.
+
+### Decision
+
+**The $20,000 USD remains held and undeployed.** Five strategies have now been
+tested to completion against the same objective gates; none has cleared them. No
+MT5 demo configuration is issued, because the protocol requires all four gates to
+pass before execution steps are provided.
