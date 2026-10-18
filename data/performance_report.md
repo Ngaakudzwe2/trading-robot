@@ -2187,3 +2187,85 @@ Two secondary observations:
 
 The real-yield substitution (economically the correct driver for gold) did not
 rescue it either, which rules out "wrong series" as the explanation.
+
+## Hypothesis 4: AUDJPY/AUDNZD Statistical Arbitrage -- FAILS AT THE FIRST GATE (2026-10-18)
+
+The last surviving candidate, and it does not survive. Gate 1 (cointegration
+confirmed at p<0.05) fails on the requested 2018-2026 period, so the strategy
+results below are trading a spread that is NOT demonstrably stationary.
+
+### Timeframe
+Yahoo refuses intraday beyond 730 days, so H1 for these pairs starts 2024-01-01,
+not 2018. Daily (2,263 aligned bars, 2018-01-01 to 2026-09-09) is the primary
+run -- also the timeframe this candidate was screened on, and the classic one
+for pairs trading.
+
+### Gate 1 result: FAILED on 2018-2026
+
+| Test | Result | Verdict |
+|---|---|---|
+| Johansen trace (r=0) | 6.512 vs 15.494 crit | cannot reject no-cointegration |
+| Johansen max-eigenvalue | 6.494 vs 14.264 crit | cannot reject |
+| ADF on spread | p=0.1146 | NOT stationary |
+| Engle-Granger | p=0.2772 | not cointegrated |
+
+### Why this contradicts the 2026-09-10 screening (p=0.0254)
+
+The relationship is **window-dependent**, and no window passes both tests:
+
+| Window | Johansen trace | ADF p | E-G p |
+|---|---|---|---|
+| 2012- | 15.69 / 15.49 (marginal) | 0.1763 | 0.3801 |
+| 2015-07- | 14.33 / 15.49 | 0.0199 | 0.0695 |
+| 2016- | 11.61 / 15.49 | 0.0182 | 0.0645 |
+| 2018- | 6.51 / 15.49 | 0.1146 | 0.2772 |
+| 2020- | 4.84 / 15.49 | 0.2339 | 0.4620 |
+| 2022- | 10.36 / 15.49 | 0.0178 | 0.0634 |
+
+Johansen rejects only on the longest window and only marginally; ADF calls the
+spread stationary on 2015/2016/2022 but not 2012/2018/2020. The two tests never
+agree on the same window, and Engle-Granger ranges p=0.063 to p=0.462. A
+genuinely cointegrated pair shows stable rejection across most windows. This is
+noise crossing a threshold occasionally.
+
+**The screening hit was a multiple-comparisons false positive.** Screening tested
+12 instruments = 66 pairs at alpha=0.05. With NO real relationships the expected
+number of false positives is 3.3. It found exactly 3. The screening therefore
+found nothing beyond chance, and the EURCHF~AUDCAD elimination (which looked like
+the structural-break check working) was one of three coin flips, not a filter
+separating signal from artifact. The correct reading of that screen was "nothing
+here", and a Bonferroni or FDR correction at the time would have said so --
+0.05/66 = 0.00076, which none of the three approached.
+
+### Strategy results (reported, but on a non-stationary spread)
+
+30-fold walk-forward, daily, both legs paying round-trip spread plus per-day swap:
+
+| Variant | Trades | Win rate | PF | Net P&L | Max DD | Median fold Sharpe | p |
+|---|---|---|---|---|---|---|---|
+| With stops (z 3.5, 60-bar time) | 66 | 48.5% | 1.591 | +47.37% | 18.63% | 0.000 | 0.166 |
+| Brief's rule, no stop | 43 | 65.1% | 1.905 | +60.69% | 18.73% | 0.000 | 0.124 |
+| With stops, 2x costs | 66 | 48.5% | 1.528 | +43.39% | 19.41% | 0.000 | 0.204 |
+
+These look like the best headline numbers in the project's history and should NOT
+be trusted:
+- **p = 0.124-0.204**, and every bootstrap CI spans zero by a wide margin
+  (e.g. [-15.88%, +114.75%]). 43-66 trades cannot support a conclusion.
+- **Median fold Sharpe is 0.000 across all variants** -- 30 folds over 2,263 bars
+  is ~75 bars per fold against a 16-bar average hold, so most folds hold fewer
+  than 3 trades and score neutral. The fold structure is too fine for this trade
+  frequency and carries no information here; only the pooled figures mean anything.
+- **The spread's reversion half-life is 115.7 bars against a 60-bar time stop.**
+  The spread reverts more slowly than the strategy allows it to, a genuine design
+  mismatch rather than a tuning detail.
+- **Removing the stop IMPROVES every metric** (PF 1.591 -> 1.905). Risk control
+  making results worse means the sample contains no real divergence event, i.e.
+  the test period was benign -- precisely the condition under which an unstopped
+  pairs strategy looks best and is most dangerous.
+
+### Conclusion
+Four fundamentally different approaches have now been tested to completion:
+directional OHLC patterns, session order blocks, cross-asset macro filters, and
+statistical arbitrage. None produced a statistically significant edge. The
+screening that nominated this pair has itself been shown to have found only its
+expected false-positive rate. There is no remaining nominated candidate.
